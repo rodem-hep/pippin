@@ -14,6 +14,7 @@ Clone the repository and initialise the necessary submodule<sup>1</sup>:
 
 ```
 git clone git@github.com:rodem-hep/pippin.git
+cd pippin
 git submodule update --init
 ```
 
