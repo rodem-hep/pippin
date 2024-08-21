@@ -1,0 +1,20 @@
+# @package _global_
+
+is_debug: True
+
+data:
+  n_train: 50_000
+  n_valid: 25_000
+  n_test: 25_000
+  loader_kwargs:
+    batch_size: 2048
+    num_workers: 0
+
+trainer:
+  max_epochs: 4
+  check_val_every_n_epoch: 4
+  log_every_n_steps: 10
+  num_sanity_val_steps: 0
+
+model:
+  plot_by_channel: False

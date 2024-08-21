@@ -1,0 +1,24 @@
+# ML
+torch
+lightning
+torchdiffeq
+scikit-learn
+nflows
+wandb
+
+# Calculus
+numpy
+scipy
+
+# Plot
+matplotlib
+
+# Data
+h5py
+
+# Utils
+hydra-core
+hydra-colorlog
+omegaconf
+dotmap
+rich

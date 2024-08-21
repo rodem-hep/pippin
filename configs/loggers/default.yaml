@@ -1,0 +1,12 @@
+# wandb:
+#   _target_: lightning.pytorch.loggers.wandb.WandbLogger
+#   offline: False
+#   id: null
+#   log_model: False
+#   project: ${project_name}
+#   name: ${network_name}
+#   group: ${group_name}
+#   tags: ${tags_list}
+#   save_dir: ${paths.wandb}
+#   resume: allow
+null

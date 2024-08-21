@@ -1,0 +1,16 @@
+# User defined
+data_dir: ./data
+outputs_dir: ./outputs
+
+# Data
+data_ttbar_inclusive: ${paths.data_dir}
+
+# Outputs (${paths.outputs} will be created by hydra)
+outputs: ${paths.outputs_dir}/${project_name}/${group_name}/${network_name}
+trainer: ${paths.outputs}
+wandb: ${paths.outputs}
+checkpoints: ${paths.outputs}/checkpoints
+checkpoints_best: ${paths.checkpoints}/last.ckpt
+plots: ${paths.outputs}/plots
+hdf5: ${paths.outputs}/hdf5
+config: ${paths.outputs}/full_config.yaml

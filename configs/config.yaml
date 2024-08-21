@@ -1,0 +1,40 @@
+# Order indicates overwriting
+defaults:
+  - trainer: default
+  - model: default
+  - data: ttbar_inclusive
+  - loggers: default
+  - hydra: default
+  - paths: default
+  - callbacks: default
+  - _self_
+
+seed: 12345 # For reproducibility
+project_name: PIPPIN # Determines output directory path and wandb project
+group_name: ttbar
+tags_list: [inclusive]
+network_name: ${now:%Y-%m-%d}_${now:%H-%M-%S} # Used for both saving and wandb
+ckpt_path: ${paths.checkpoints_best} # Checkpoint path to resume training
+job_id: 0  # Cluster job ID
+
+# Sets the internal precision of float32 matrix multiplications.
+# Options: highest, high, medium.
+# See: https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html
+float32_precision: medium
+
+# Print more warnings and info
+verbose: False
+
+# Flag to recognise if it is a debug run
+# This is set to true by the debug config if loaded
+is_debug: False
+
+# COMPLETELY replaces the above config with what is contained in ${paths.outputs}
+# This is ideal for resuming a job, log to the same directory
+# Will also resume the loggers and set the ckpt_path to the latest
+full_resume: False
+cfg_path: ${paths.config}  # Path to the saved config file
+
+# These parameters are not touched when reloading a full_confg.yaml
+train: True  # Set to False to skip model training
+test: True  # Run test using best model from checkpoint callback or ckpt_path

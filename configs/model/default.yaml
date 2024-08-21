@@ -1,0 +1,232 @@
+_target_: src.models.pippin.PIPPIN
+
+# Class initialisation of the PIPPIN network
+inpt_dim: 4
+outp_dim: 4
+mult_dim: 3
+use_input_n: True
+max_n: ${data.max_n}
+bias_n: ${data.bias_n}
+decay_channel: ${data.decay_channel}
+loss_delay_n: 2  # Number of epochs to wait before starting to compute the multiplicity loss
+pres_mode: continuous
+do_test_loop: True  # This parameter is not touched when reloading a full_confg.yaml
+plot_by_channel: True
+path_plots: ${paths.plots}
+path_hdf5: ${paths.hdf5}
+job_id: ${job_id}
+
+loss_weights:
+  pc: 1.0
+  n: 0.1
+  p: 1.0
+
+# Configuration of the first input pre-encoder
+pre_enc_config:
+  inpt_dim: ${model.inpt_dim}
+  outp_dim: ${model.pre_enc_config.te_config.model_dim}
+  te_config:
+    model_dim: 256
+    num_layers: 2
+    mha_config:
+      num_heads: 8
+    dense_config:
+      hddn_dim: 512
+      act_h: lrlu
+      nrm: layer
+  node_embd_config:
+    hddn_dim: 128
+    act_h: lrlu
+    nrm: layer
+  outp_embd_config:
+    hddn_dim: 128
+    act_h: lrlu
+    nrm: layer
+
+# Configuration of the presence prediction head
+pres_head_config:
+  inpt_dim: ${model.pre_enc_config.outp_dim}
+  outp_dim: 1
+  ctxt_dim: ${eval:'${model.mult_dim} * ${model.use_input_n}'}
+  num_blocks: 2
+  hddn_dim: 128
+  act_h: lrlu
+  nrm: layer
+  act_o: sigmoid
+
+# Configuration of the multiplicity encoder
+mult_enc_config:
+  inpt_dim: ${model.pre_enc_config.outp_dim}
+  outp_dim: ${model.pre_enc_config.outp_dim}
+  ctxt_dim: ${eval:'${model.mult_dim} * ${model.use_input_n}'}
+  tve_config:
+    model_dim: 256
+    num_sa_layers: 2
+    num_ca_layers: 2
+    mha_config:
+      num_heads: 8
+    dense_config:
+      hddn_dim: 512
+      act_h: lrlu
+      nrm: layer
+  node_embd_config:
+    hddn_dim: 128
+    act_h: lrlu
+    nrm: layer
+  outp_embd_config:
+    hddn_dim: 128
+    act_h: lrlu
+    nrm: layer
+
+# Configuratiokn of the multiplicity predictor
+mult_pred_config:
+  inpt_dim: ${model.mult_dim}
+  int_dims: ${eval:'[True] * ${model.mult_dim}'}
+  ctxt_dim: ${model.mult_enc_config.outp_dim}
+  dequant_mode: cdf  # noise, cdf
+  dequant_scale: 0.15
+  dequant_distribution: normal
+  do_logit: False
+  logit_eps: 0.01
+  cdf_eps: 1.0e-6
+  invertible_net:
+    _target_: mattstools.mattstools.flows.transforms.stacked_norm_flow
+    _partial_: True
+    nstacks: 4
+    param_func: cplng
+    invrt_func: rqs
+    net_kwargs:
+      num_blocks: 2
+      hddn_dim: 128
+      act_h: lrlu
+      drp: 0.0
+      nrm: layer
+    rqs_kwargs:
+      num_bins: 16
+      tail_bound: 4
+      tails: linear
+    do_lu: true
+  ctxt_net:
+    _target_: mattstools.mattstools.modules.DenseNetwork
+    _partial_: True
+    outp_dim: 16
+    hddn_dim: 128
+    num_blocks: 2
+    act_h: lrlu
+    nrm: layer
+
+# Configuration of the second input encoder
+post_enc_config:
+  inpt_dim: ${model.pre_enc_config.outp_dim}
+  outp_dim: ${model.post_enc_config.te_config.model_dim}
+  te_config:
+    model_dim: 256
+    num_layers: 2
+    mha_config:
+      num_heads: 8
+    dense_config:
+      hddn_dim: 512
+      act_h: lrlu
+      nrm: layer
+  node_embd_config:
+    hddn_dim: 128
+    act_h: lrlu
+    nrm: layer
+  outp_embd_config:
+    hddn_dim: 128
+    act_h: lrlu
+    nrm: layer
+
+# Configuration of the PIP-JeDi conditional decoder
+pip_jedi_config:
+  data_dims:
+    - ${model.outp_dim}
+    - 0
+    - null
+  loss_name: mse
+  max_sigma: 80
+  min_sigma: 1.0e-5
+  ema_sync: 0.999
+  p_mean: -1.2
+  p_std: 1.2
+  sampler_function:
+    _target_: mattstools.mattstools.k_diffusion.sample_heun
+    _partial_: True
+  sigma_function:
+    _target_: mattstools.mattstools.k_diffusion.get_sigmas_karras
+    _partial_: True
+    n_steps: 50
+    rho: 7
+  cosine_config:
+    inpt_dim: 1
+    encoding_dim: 16
+    scheme: exponential
+  normaliser_config:
+    max_n: 2_000_000
+  architecture:
+    _target_: mattstools.mattstools.transformers.FullTransformerDecoder
+    _partial_: True
+    td_config:
+      model_dim: 256
+      num_layers: 4
+      mha_config:
+        num_heads: 8
+        init_zeros: True
+        do_layer_norm: True
+      dense_config:
+        hddn_dim: 512
+        act_h: lrlu
+        nrm: layer
+        output_init_zeros: True
+    ctxt_embd_config:
+      outp_dim: 256
+      act_h: lrlu
+      nrm: layer
+    node_embd_config:
+      hddn_dim: 128
+      act_h: lrlu
+      nrm: layer
+    outp_embd_config:
+      hddn_dim: 128
+      act_h: lrlu
+      nrm: layer
+      output_init_zeros: True
+
+# Configuration of the particle tokens generator
+part_tkn_config:
+  num_embeddings: ${eval:'${model.mult_dim} + 1'}
+  embedding_dim: ${model.pip_jedi_config.architecture.td_config.model_dim}
+  padding_idx: 0
+  norm_type: 2.0
+
+# Configuration of the presence tokens generator
+pres_tkn_config:
+  discrete:
+    num_embeddings: 2
+    embedding_dim: ${model.post_enc_config.outp_dim}
+    norm_type: 2.0
+  continuous:
+    in_features: 1
+    out_features: ${model.post_enc_config.outp_dim}
+
+# Configuration of the input normaliser
+normaliser_config:
+  inpt_dim: ${model.inpt_dim}
+  max_n: 2_000_000
+
+# Full configuration for the model optimizer
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: True
+  lr: 1.0e-4
+  weight_decay: 0.0
+
+# Config dicts to pass to mattstools and pytorch lightning
+sched_config:
+  mattstools:
+    name: warmup
+    num_steps: 50_000
+  lightning:
+    monitor: valid/total_loss
+    interval: step
+    frequency: 1

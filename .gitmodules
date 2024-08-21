@@ -1,0 +1,4 @@
+[submodule "mattstools"]
+	path = mattstools
+	url = ssh://git@gitlab.cern.ch:7999/mleigh/mltools.git
+	branch = pippin

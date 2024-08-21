@@ -1,0 +1,15 @@
+_target_: src.data.ttbar.TopQuarksDataModule
+
+path: ${paths.data_ttbar_inclusive}
+decay_channel: inclusive
+max_n: [2, 1, 16]
+bias_n: [1, 1, 4]
+n_train: 37_204_520  # max: 37'204'520
+n_valid: 808_610  # max: 808'610
+n_test: 2_426_753  # max: 2'426'753
+
+loader_kwargs:
+  pin_memory: True
+  batch_size: 8192
+  num_workers: 0
+  drop_last: True
